@@ -1,8 +1,9 @@
-package com.dotis.charakas.services;
+package com.dotis.charakas.services.impl;
 
 import java.util.*;
 import java.util.function.*;
 import com.dotis.charakas.actions.*;
+import com.dotis.charakas.services.InterpreterService;
 
 public class InterpreterServiceImpl implements InterpreterService {
     final public Map<String, Function<List<String>, ActionPayload>> commandsToCreators = new HashMap<>() {{
@@ -27,20 +28,23 @@ public class InterpreterServiceImpl implements InterpreterService {
     protected ActionPayload createPayload(List<String> tokens) {
         String input = String.join(" ", tokens).toLowerCase();
         
-        BiFunction<String, Function<List<String>, ActionPayload>, ActionPayload> tryCreatePayload = (cmd, creator) -> {
-            if (input.startsWith(cmd))
-                return creator(tokens);
-
+        BiFunction<String, Function<List<String>, ActionPayload>, ActionPayload> tryCreatePayload = (String cmd, Function<List<String>, ActionPayload> creator) -> {
+            if (input.startsWith(cmd)) {
+                return creator.apply(tokens);
+            }
+            
             return null;
         };
 
-        for (var commandToCreator : commandsToCreators) {
-            var payload = tryCreatePayload(commandToCreator.getKey(), commandToCreator.getValue());
+        
+        for (var commandToCreator : commandsToCreators.entrySet()) {
+            var payload = tryCreatePayload.apply(commandToCreator.getKey(), commandToCreator.getValue());
 
-            if (payload != null)
+            if (payload != null) {
                 return payload;
+            }
         }
-
+        
         return new UnknownActionPayload();
     }
 }
